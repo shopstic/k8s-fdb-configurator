@@ -1,4 +1,6 @@
-import { createCliAction, ExitCode, Type } from "../deps.ts";
+import { createCliAction, ExitCode } from "../deps/cli-utils.ts";
+import { Type } from "../deps/typebox.ts";
+
 import {
   fdbcliInheritExec,
   fetchCoordinatorEndpointsFromServiceNames,

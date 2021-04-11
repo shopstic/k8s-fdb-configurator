@@ -1,4 +1,6 @@
-import { createCliAction, delay, Type } from "../deps.ts";
+import { delay } from "../deps/async-utils.ts";
+import { createCliAction } from "../deps/cli-utils.ts";
+import { Type } from "../deps/typebox.ts";
 import {
   fdbcliCaptureExec,
   updateConnectionStringConfigMap,

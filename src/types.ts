@@ -1,15 +1,7 @@
-import { TObject, TProperties, Type } from "./deps.ts";
-import type { Static } from "./deps.ts";
+import { TObject, TProperties, Type } from "./deps/typebox.ts";
+import type { Static } from "./deps/typebox.ts";
 
-export const FdbCoordinatorConfigSchema = RelaxedObject({
-  name: Type.String(),
-  node: Type.String({ minLength: 1 }),
-  ip: Type.String({ format: "ipv4" }),
-});
-
-export type FdbCoordinatorConfig = Static<typeof FdbCoordinatorConfigSchema>;
-
-export const FdbClusterConfigSchema = RelaxedObject({
+export const FdbDatabaseConfigSchema = RelaxedObject({
   storageEngine: Type.Union([
     Type.Literal("ssd-2"),
     Type.Literal("ssd-redwood-experimental"),
@@ -22,11 +14,14 @@ export const FdbClusterConfigSchema = RelaxedObject({
   logCount: Type.Number({ minimum: 1 }),
   proxyCount: Type.Number({ minimum: 1 }),
   resolverCount: Type.Number({ minimum: 1 }),
-  standbyCount: Type.Number({ minimum: 0 }),
   coordinatorServiceNames: Type.Array(Type.String()),
+  excludedServiceEndpoints: Type.Array(Type.Object({
+    name: Type.String(),
+    port: Type.Number({ minimum: 1, maximum: 65535 }),
+  })),
 });
 
-export type FdbClusterConfig = Static<typeof FdbClusterConfigSchema>;
+export type FdbDatabaseConfig = Static<typeof FdbDatabaseConfigSchema>;
 
 function RelaxedObject<T extends TProperties>(
   properties: T,
@@ -40,8 +35,8 @@ export const FdbStatusSchema = RelaxedObject({
       resolvers: Type.Number(),
       proxies: Type.Number(),
       logs: Type.Number(),
-      redundancy_mode: FdbClusterConfigSchema.properties.redundancyMode,
-      storage_engine: FdbClusterConfigSchema.properties.storageEngine,
+      redundancy_mode: FdbDatabaseConfigSchema.properties.redundancyMode,
+      storage_engine: FdbDatabaseConfigSchema.properties.storageEngine,
     })),
     recovery_state: Type.Optional(Type.Object({
       name: Type.String(),

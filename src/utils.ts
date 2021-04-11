@@ -1,15 +1,10 @@
-import {
-  captureExec,
-  createK8sConfigMap,
-  inheritExec,
-  memoizePromise,
-  TObject,
-  TProperties,
-  Type,
-  validate,
-} from "./deps.ts";
-import { FdbClusterConfig, FdbStatus, FdbStatusSchema } from "./types.ts";
-import { FdbClusterConfigSchema } from "./types.ts";
+import { captureExec, inheritExec } from "./deps/exec-utils.ts";
+import { validate } from "./deps/validation-utils.ts";
+import { memoizePromise } from "./deps/async-utils.ts";
+import { TObject, TProperties, Type } from "./deps/typebox.ts";
+import { createK8sConfigMap } from "./deps/k8s-utils.ts";
+import { FdbDatabaseConfig, FdbStatus, FdbStatusSchema } from "./types.ts";
+import { FdbDatabaseConfigSchema } from "./types.ts";
 
 function trimFdbCliOutput(output: string): string {
   let newLineCount = 0;
@@ -121,10 +116,10 @@ export const readCurrentNamespace = memoizePromise(() =>
 
 export async function readClusterConfig(
   configFile: string,
-): Promise<FdbClusterConfig> {
+): Promise<FdbDatabaseConfig> {
   const configJson = JSON.parse(await Deno.readTextFile(configFile));
   const configValidation = validate(
-    FdbClusterConfigSchema,
+    FdbDatabaseConfigSchema,
     configJson,
   );
 

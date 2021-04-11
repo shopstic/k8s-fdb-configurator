@@ -1,10 +1,5 @@
-import {
-  captureExec,
-  createCliAction,
-  ExitCode,
-  NonZeroExitError,
-  Type,
-} from "../deps.ts";
+import { Type } from "../deps/typebox.ts";
+import { createCliAction, ExitCode } from "../deps/cli-utils.ts";
 import {
   commandWithTimeout,
   fetchCoordinatorEndpointsFromServiceNames,
