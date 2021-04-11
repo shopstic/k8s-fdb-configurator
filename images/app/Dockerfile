@@ -22,4 +22,4 @@ COPY ./app.js /home/app/app.js
 USER app:app
 WORKDIR /home/app
 
-ENTRYPOINT ["/usr/bin/dumb-init", "--", "deno", "run", "-A", "/home/app/app.js"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "deno", "run", "--unstable", "-A", "/home/app/app.js"]
