@@ -17,11 +17,15 @@ function generateString(length: number) {
     .join("");
 }
 
+function NonEmptyString() {
+  return Type.String({ minLength: 1 });
+}
+
 export default createCliAction(
   Type.Object({
-    configMapKey: Type.String({ minLength: 1 }),
-    configMapName: Type.String({ minLength: 1 }),
-    serviceNames: Type.Array(Type.String({ minLength: 1 })),
+    configMapKey: NonEmptyString(),
+    configMapName: NonEmptyString(),
+    serviceNames: Type.Union([Type.Array(NonEmptyString()), NonEmptyString()]),
   }),
   async (
     {
@@ -30,6 +34,10 @@ export default createCliAction(
       serviceNames,
     },
   ) => {
+    const serviceNameArray = typeof serviceNames === "string"
+      ? [serviceNames]
+      : serviceNames;
+
     const namespace = await readCurrentNamespace();
 
     const hasExistingConfigMap = await (async () => {
@@ -65,7 +73,7 @@ export default createCliAction(
     }
 
     const coordinatorEndpoints =
-      await fetchCoordinatorEndpointsFromServiceNames(serviceNames);
+      await fetchCoordinatorEndpointsFromServiceNames(serviceNameArray);
     const clusterDescription = generateString(32);
     const clusterId = generateString(8);
     const connectionString = `${clusterDescription}:${clusterId}@${
