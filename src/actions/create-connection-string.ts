@@ -41,30 +41,32 @@ export default createCliAction(
     const namespace = await readCurrentNamespace();
 
     const hasExistingConfigMap = await (async () => {
-      try {
-        await captureExec({
-          run: {
-            cmd: commandWithTimeout([
-              "kubectl",
-              "get",
-              `configmap/${configMapName}`,
-              "-n",
-              namespace,
-            ], 5),
-          },
-        });
+      const cmd = [
+        "kubectl",
+        "get",
+        `configmap/${configMapName}`,
+        "-n",
+        namespace,
+      ];
+      const child = Deno.run({
+        cmd: commandWithTimeout(cmd, 5),
+        stdout: "null",
+        stderr: "piped",
+      });
 
+      const stderr = new TextDecoder().decode(await child.stderrOutput());
+      const { code } = await child.status();
+
+      if (code === 0) {
         return true;
-      } catch (e) {
-        if (
-          e instanceof NonZeroExitError && e.output &&
-          e.output.indexOf("not found") !== -1
-        ) {
-          return false;
-        }
-
-        throw e;
+      } else if (stderr.indexOf("not found") !== -1) {
+        return false;
       }
+
+      console.error(cmd.join(" "));
+      throw new Error(
+        `Command exited with code '${code}' and stderr: ${stderr}`,
+      );
     })();
 
     if (hasExistingConfigMap) {
