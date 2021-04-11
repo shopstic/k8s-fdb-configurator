@@ -143,7 +143,7 @@ function RelaxedObject<T extends TProperties>(
 }
 
 const ServiceSpecSchema = RelaxedObject({
-  clusterIP: Type.String({ format: "ip" }),
+  clusterIP: Type.String({ format: "ipv4" }),
   ports: Type.Array(
     RelaxedObject({
       port: Type.Number(),
