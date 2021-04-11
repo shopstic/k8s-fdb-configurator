@@ -12,8 +12,12 @@ import {
   updateConnectionStringConfigMap,
 } from "../utils.ts";
 
-function generateString(length: number) {
-  Array.from(Array(length), () => Math.floor(Math.random() * 36).toString(36))
+function generateString(length: number): string {
+  return Array
+    .from(
+      Array(length),
+      () => Math.floor(Math.random() * 36).toString(36),
+    )
     .join("");
 }
 
