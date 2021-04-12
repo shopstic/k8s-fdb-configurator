@@ -157,6 +157,19 @@ export function toFdbcliCommand(command: string) {
   ];
 }
 
+export function toRootElevatedCommand(command: string[]) {
+  return [
+    "nsenter",
+    "-t",
+    "1",
+    "-m",
+    "-u",
+    "-n",
+    "-i",
+    ...command,
+  ];
+}
+
 export const readCurrentNamespace = memoizePromise(() =>
   Deno.readTextFile(
     "/var/run/secrets/kubernetes.io/serviceaccount/namespace",

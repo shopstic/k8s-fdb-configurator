@@ -3,7 +3,11 @@ import { joinPath } from "../deps/std-path.ts";
 import { Type } from "../deps/typebox.ts";
 import { NonEmptyString } from "../types.ts";
 import { captureExec, inheritExec } from "../deps/exec-utils.ts";
-import { kubectlGetJson, kubectlInherit } from "../utils.ts";
+import {
+  kubectlGetJson,
+  kubectlInherit,
+  toRootElevatedCommand,
+} from "../utils.ts";
 import { loggerWithContext } from "../logger.ts";
 
 const logger = loggerWithContext("main");
@@ -61,7 +65,7 @@ export default createCliAction(
       );
       const mountPath = joinPath(rootMountPath, deviceId);
       const mountpointCheck = Deno.run({
-        cmd: ["mountpoint", mountPath],
+        cmd: toRootElevatedCommand(["mountpoint", mountPath]),
         stdout: "null",
         stderr: "null",
       });
@@ -72,7 +76,9 @@ export default createCliAction(
         logger.info(`Checking for existing file system inside ${devicePath}`);
 
         const wipefsTest = await captureExec({
-          run: { cmd: ["wipefs", "-a", "-n", devicePath] },
+          run: {
+            cmd: toRootElevatedCommand(["wipefs", "-a", "-n", devicePath]),
+          },
         });
 
         if (wipefsTest.trim().length > 0) {
@@ -95,7 +101,9 @@ export default createCliAction(
         }
 
         logger.info(`Formatting ${devicePath}`);
-        await inheritExec({ run: { cmd: ["mkfs.ext4", devicePath] } });
+        await inheritExec({
+          run: { cmd: toRootElevatedCommand(["mkfs.ext4", devicePath]) },
+        });
 
         logger.info(`Writing ${devicePath} to /etc/fstab`);
         await Deno.writeTextFile(
@@ -104,26 +112,23 @@ export default createCliAction(
             `${devicePath}  ${mountPath}  ext4  defaults,noatime,discard,nofail  0 0`,
         );
 
-        await Deno.mkdir(mountPath, { recursive: true });
+        logger.info(`Creating mount path ${mountPath}`);
         await inheritExec({
-          run: { cmd: ["chattr", "+i", mountPath] },
+          run: {
+            cmd: toRootElevatedCommand(["mkdir", "-p", mountPath]),
+          },
         });
 
-        logger.info(`Going to mount ${mountPath}`);
+        logger.info(`Making mount path ${mountPath} immutable`);
+        await inheritExec({
+          run: { cmd: toRootElevatedCommand(["chattr", "+i", mountPath]) },
+        });
+
+        logger.info(`Mounting ${mountPath}`);
         await inheritExec(
           {
             run: {
-              cmd: [
-                "nsenter",
-                "-t",
-                "1",
-                "-m",
-                "-u",
-                "-n",
-                "-i",
-                "mount",
-                `--source=${devicePath}`,
-              ],
+              cmd: toRootElevatedCommand(["mount", `--source=${devicePath}`]),
             },
           },
         );
