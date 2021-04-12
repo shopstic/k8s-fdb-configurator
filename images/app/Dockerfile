@@ -9,7 +9,7 @@ ENV FDB_VERSION "6.2.30"
 RUN \
   curl -Lko /tmp/fdb-clients.deb https://www.foundationdb.org/downloads/${FDB_VERSION}/ubuntu/installers/foundationdb-clients_${FDB_VERSION}-1_amd64.deb
 
-FROM debian:stable-20210111-slim
+FROM debian:stable-20210408-slim
 
 RUN \
   apt-get update && \
