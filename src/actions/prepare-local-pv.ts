@@ -65,16 +65,27 @@ export default createCliAction(
           "/dev/disk/by-id",
           deviceId,
         );
-        const mountPath = joinPath(rootMountPath, deviceId);
+
+        const deviceMountPath = joinPath(rootMountPath, "dev", deviceId);
+        const deviceMountStoragePath = joinPath(deviceMountPath, "storage");
+        const deviceMountLogPath = joinPath(deviceMountPath, "log");
+
+        const storageBindMountPath = joinPath(
+          rootMountPath,
+          "storage",
+          deviceId,
+        );
+        const logBindMountPath = joinPath(rootMountPath, "log", deviceId);
+
         const mountpointCheck = Deno.run({
-          cmd: toRootElevatedCommand(["mountpoint", mountPath]),
+          cmd: toRootElevatedCommand(["mountpoint", deviceMountPath]),
           stdout: "null",
           stderr: "null",
         });
         const isMounted = (await mountpointCheck.status()).code === 0;
 
         if (!isMounted) {
-          logger.info(`${mountPath} is not mounted`);
+          logger.info(`${deviceMountPath} is not mounted`);
           logger.info(`Checking for existing file system inside ${devicePath}`);
 
           const wipefsTest = await captureExec({
@@ -113,33 +124,54 @@ export default createCliAction(
           await inheritExec({
             run: { cmd: toRootElevatedCommand(["tee", "/etc/fstab"]) },
             stdin: currentFstabContent + "\n" +
-              `${devicePath}  ${mountPath}  ext4  defaults,noatime,discard,nofail  0 0`,
+              `${devicePath}  ${deviceMountPath}  ext4  defaults,noatime,discard,nofail  0 0
+${deviceMountStoragePath}  ${storageBindMountPath}  none  bind  0 0
+${deviceMountLogPath}  ${logBindMountPath}  none  bind  0 0
+`,
           });
 
-          logger.info(`Creating mount path ${mountPath}`);
+          logger.info(`Creating mount paths`);
           await inheritExec({
             run: {
-              cmd: toRootElevatedCommand(["mkdir", "-p", mountPath]),
+              cmd: toRootElevatedCommand([
+                "mkdir",
+                "-p",
+                deviceMountPath,
+                deviceMountStoragePath,
+                deviceMountLogPath,
+                storageBindMountPath,
+                logBindMountPath,
+              ]),
             },
           });
 
-          logger.info(`Making mount path ${mountPath} immutable`);
+          logger.info(`Making mount paths immutable`);
           await inheritExec({
-            run: { cmd: toRootElevatedCommand(["chattr", "+i", mountPath]) },
-          });
-
-          logger.info(`Mounting ${mountPath}`);
-          await inheritExec(
-            {
-              run: {
-                cmd: toRootElevatedCommand(["mount", `--source=${devicePath}`]),
-              },
+            run: {
+              cmd: toRootElevatedCommand([
+                "chattr",
+                "+i",
+                deviceMountPath,
+                storageBindMountPath,
+                logBindMountPath,
+              ]),
             },
-          );
+          });
         } else {
-          logger.info(`${mountPath} is already a mountpoint, nothing to do`);
+          logger.info(
+            `${deviceMountPath} is already a mountpoint, nothing to do`,
+          );
         }
       }
+
+      logger.info(`Mounting all`);
+      await inheritExec(
+        {
+          run: {
+            cmd: toRootElevatedCommand(["mount", `-a`]),
+          },
+        },
+      );
     }
 
     logger.info(
