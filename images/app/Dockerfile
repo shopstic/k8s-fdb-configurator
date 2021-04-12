@@ -2,6 +2,13 @@ FROM shopstic/bin-dumb-init:1.2.2 as bin-dumb-init
 FROM shopstic/bin-kubectl:1.20.4 as bin-kubectl
 FROM shopstic/bin-deno:1.8.3 as bin-deno
 
+FROM shopstic/curl-tar-unzip:1.0.1 as fdb-clients
+
+ENV FDB_VERSION "6.2.30"
+
+RUN \
+  curl -Lko /tmp/fdb-clients.deb https://www.foundationdb.org/downloads/${FDB_VERSION}/ubuntu/installers/foundationdb-clients_${FDB_VERSION}-1_amd64.deb
+
 FROM debian:stable-20210111-slim
 
 RUN \
@@ -16,6 +23,11 @@ RUN \
 COPY --from=bin-dumb-init /usr/bin/dumb-init /usr/bin/dumb-init
 COPY --from=bin-kubectl /usr/bin/kubectl /usr/bin/kubectl
 COPY --from=bin-deno /usr/bin/deno /usr/bin/deno
+COPY --from=fdb-clients /tmp/fdb-clients.deb /tmp/fdb-clients.deb
+
+RUN \
+  apt-get install /tmp/fdb-clients.deb && \
+  rm -f /tmp/fdb-clients.deb
 
 USER app:app
 WORKDIR /home/app
