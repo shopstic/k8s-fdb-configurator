@@ -6,6 +6,7 @@ import { createK8sConfigMap } from "./deps/k8s-utils.ts";
 import { FdbDatabaseConfig, FdbStatus, FdbStatusSchema } from "./types.ts";
 import { FdbDatabaseConfigSchema } from "./types.ts";
 import { loggerWithContext } from "./logger.ts";
+import { readLines } from "./deps/std-io.ts";
 
 const logger = loggerWithContext("utils");
 
@@ -57,6 +58,51 @@ export async function fdbcliCaptureExec(
     } else {
       throw e;
     }
+  }
+}
+
+export async function fdbcliInheritExecWithNoWait(
+  command: string,
+  timeoutSeconds = 30,
+): Promise<void> {
+  const cmd = commandWithTimeout(toFdbcliCommand(command), timeoutSeconds);
+
+  const child = Deno.run({
+    cmd,
+    stdout: "piped",
+    stderr: "piped",
+  });
+
+  try {
+    const stdoutPromise = (async () => {
+      for await (const line of readLines(child.stdout!)) {
+        console.log(line);
+        if (line.indexOf("This may take a while") !== -1) {
+          child.kill(2); // SIGINT
+          return;
+        }
+      }
+    })();
+
+    const stderrPromise = (async () => {
+      for await (const line of readLines(child.stderr!)) {
+        console.error(line);
+      }
+    })();
+
+    await Promise.all([stdoutPromise, stderrPromise]);
+
+    const { code } = await child.status();
+
+    if (code === 0 || code === 130) {
+      return;
+    }
+
+    throw new Error(`Command exited with code: ${code}`);
+  } finally {
+    child.stdout!.close();
+    child.stderr!.close();
+    child.close();
   }
 }
 

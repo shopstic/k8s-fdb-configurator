@@ -5,6 +5,7 @@ import { FdbDatabaseConfig, FdbStatus, FdbStatusProcess } from "../types.ts";
 
 import {
   fdbcliInheritExec,
+  fdbcliInheritExecWithNoWait,
   fetchCoordinatorEndpointsFromServiceNames,
   fetchServiceSpecs,
   fetchStatus,
@@ -210,7 +211,9 @@ async function excludeAndIncludeProcesses(
     if (!status.client.database_status.available) {
       logger.error("Database is not available, going to skip excluding");
     } else {
-      await fdbcliInheritExec(`exclude ${toBeExcludedAddresses.join(" ")}`);
+      await fdbcliInheritExecWithNoWait(
+        `exclude ${toBeExcludedAddresses.join(" ")}`,
+      );
     }
   }
 
