@@ -2,6 +2,7 @@ import { delay } from "../deps/async-utils.ts";
 import { createCliAction } from "../deps/cli-utils.ts";
 import { Type } from "../deps/typebox.ts";
 import { loggerWithContext } from "../logger.ts";
+import { NonEmptyString } from "../types.ts";
 import {
   fdbcliCaptureExec,
   updateConnectionStringConfigMap,
@@ -14,8 +15,8 @@ const connectionStringResultRegex =
 
 export default createCliAction(
   Type.Object({
-    configMapKey: Type.String(),
-    configMapName: Type.String(),
+    configMapKey: NonEmptyString(),
+    configMapName: NonEmptyString(),
     updateIntervalMs: Type.Number(),
   }),
   async (

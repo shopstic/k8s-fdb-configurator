@@ -7,6 +7,7 @@ import {
   updateConnectionStringConfigMap,
 } from "../utils.ts";
 import { loggerWithContext } from "../logger.ts";
+import { NonEmptyString } from "../types.ts";
 
 const logger = loggerWithContext("main");
 
@@ -17,10 +18,6 @@ function generateString(length: number): string {
       () => Math.floor(Math.random() * 36).toString(36),
     )
     .join("");
-}
-
-function NonEmptyString() {
-  return Type.String({ minLength: 1 });
 }
 
 export default createCliAction(

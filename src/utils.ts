@@ -1,7 +1,7 @@
 import { captureExec, inheritExec } from "./deps/exec-utils.ts";
 import { validate } from "./deps/validation-utils.ts";
 import { memoizePromise } from "./deps/async-utils.ts";
-import { Static, TObject, TProperties, Type } from "./deps/typebox.ts";
+import { Static, TObject, TProperties, TSchema, Type } from "./deps/typebox.ts";
 import { createK8sConfigMap } from "./deps/k8s-utils.ts";
 import { FdbDatabaseConfig, FdbStatus, FdbStatusSchema } from "./types.ts";
 import { FdbDatabaseConfigSchema } from "./types.ts";
@@ -198,38 +198,92 @@ export const ServiceSpecSchema = RelaxedObject({
 
 export type ServiceSpec = Static<typeof ServiceSpecSchema>;
 
+export async function kubectlInherit({
+  args,
+  stdin,
+  timeoutSeconds = 5,
+}: {
+  args: string[];
+  stdin?: string | Deno.Reader;
+  timeoutSeconds?: number;
+}) {
+  return await inheritExec({
+    run: {
+      cmd: commandWithTimeout([
+        "kubectl",
+        ...args,
+      ], timeoutSeconds),
+    },
+    stdin,
+  });
+}
+
+export async function kubectlCapture({
+  args,
+  stdin,
+  timeoutSeconds = 5,
+}: {
+  args: string[];
+  stdin?: string | Deno.Reader;
+  timeoutSeconds?: number;
+}) {
+  return await captureExec({
+    run: {
+      cmd: commandWithTimeout([
+        "kubectl",
+        ...args,
+      ], timeoutSeconds),
+    },
+    stdin,
+  });
+}
+
+export async function kubectlGetJson<T extends TSchema>({
+  args,
+  schema,
+  timeoutSeconds,
+}: {
+  args: string[];
+  schema: T;
+  timeoutSeconds?: number;
+}): Promise<Static<T>> {
+  const fullArgs = ["get", ...args];
+
+  const output = await kubectlCapture({
+    args: fullArgs,
+    timeoutSeconds,
+  });
+
+  const validation = validate(schema, JSON.parse(output));
+
+  if (!validation.isSuccess) {
+    logger.error(output);
+    throw new Error(
+      `'kubectl ${
+        fullArgs.join(" ")
+      }' output failed schema validation. Errors: ${
+        JSON.stringify(validation.errors, null, 2)
+      }`,
+    );
+  }
+
+  return validation.value;
+}
+
 export async function fetchServiceSpecs(
   serviceNames: string[],
 ): Promise<ServiceSpec[]> {
   const namespace = await readCurrentNamespace();
   const promises = serviceNames.map(async (name) => {
-    const output = await captureExec(
-      {
-        run: {
-          cmd: commandWithTimeout([
-            "kubectl",
-            "get",
-            `service/${name}`,
-            "-n",
-            namespace,
-            "-o=jsonpath={.spec}",
-          ], 5),
-        },
-      },
-    );
-
-    const specValidation = validate(ServiceSpecSchema, JSON.parse(output));
-
-    if (!specValidation.isSuccess) {
-      logger.error(output);
-      throw new Error(
-        `Invalid service spec for ${name}. Errors: ${
-          JSON.stringify(specValidation.errors, null, 2)
-        }`,
-      );
-    }
-
-    return specValidation.value;
+    return kubectlGetJson({
+      args: [
+        `service/${name}`,
+        "-n",
+        namespace,
+        "-o=jsonpath={.spec}",
+      ],
+      schema: ServiceSpecSchema,
+    });
   });
 
   return await Promise.all(promises);
@@ -261,12 +315,8 @@ export async function updateConnectionStringConfigMap(
     },
   });
 
-  await inheritExec(
-    {
-      run: {
-        cmd: commandWithTimeout(["kubectl", "apply", "-f", "-"], 5),
-      },
-      stdin: JSON.stringify(configMap),
-    },
-  );
+  await kubectlInherit({
+    args: ["apply", "-f", "-"],
+    stdin: JSON.stringify(configMap),
+  });
 }

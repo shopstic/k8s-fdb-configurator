@@ -1,7 +1,12 @@
 import { createCliAction, ExitCode } from "../deps/cli-utils.ts";
 import { Type } from "../deps/typebox.ts";
 import { loggerWithContext } from "../logger.ts";
-import { FdbDatabaseConfig, FdbStatus, FdbStatusProcess } from "../types.ts";
+import {
+  FdbDatabaseConfig,
+  FdbStatus,
+  FdbStatusProcess,
+  NonEmptyString,
+} from "../types.ts";
 
 import {
   fdbcliInheritExec,
@@ -234,7 +239,7 @@ async function excludeAndIncludeProcesses(
 
 export default createCliAction(
   Type.Object({
-    configFile: Type.String({ minLength: 1 }),
+    configFile: NonEmptyString(),
   }),
   async (
     {
