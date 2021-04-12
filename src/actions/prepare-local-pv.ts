@@ -141,9 +141,19 @@ export default createCliAction(
     }
 
     logger.info(
+      `Removing '${pendingDeviceIdsAnnotationName}' annotation from node ${nodeName}`,
+    );
+    await kubectlInherit({
+      args: [
+        "annotation",
+        `node/${nodeName}`,
+        `${pendingDeviceIdsAnnotationName}-`,
+      ],
+    });
+
+    logger.info(
       `Removing '${labelName}' label from node ${nodeName}`,
     );
-
     await kubectlInherit({
       args: [
         "label",
