@@ -1,11 +1,13 @@
 import { delay } from "../deps/async-utils.ts";
 import { createCliAction } from "../deps/cli-utils.ts";
 import { Type } from "../deps/typebox.ts";
+import { loggerWithContext } from "../logger.ts";
 import {
   fdbcliCaptureExec,
   updateConnectionStringConfigMap,
 } from "../utils.ts";
 
+const logger = loggerWithContext("main");
 const FDB_CLUSTER_FILE = "FDB_CLUSTER_FILE";
 const connectionStringResultRegex =
   /`\\xff\\xff\/connection_string' is `([^']+)'/;
@@ -33,6 +35,7 @@ export default createCliAction(
 
     while (true) {
       try {
+        logger.info("Getting current connection string");
         const connectionStringResult = await fdbcliCaptureExec(
           `get \\xFF\\xFF/connection_string`,
         );
@@ -49,8 +52,10 @@ export default createCliAction(
 
         const connectionString = connectionStringMatch[1];
 
-        if (connectionString !== lastConnectionString) {
-          console.log(
+        if (connectionString === lastConnectionString) {
+          logger.info(`Connection string hasn't changed`, connectionString);
+        } else {
+          logger.info(
             `Going to update ConfigMap '${configMapName}' with data key '${configMapKey}' and value '${connectionString}'`,
           );
 
@@ -60,12 +65,12 @@ export default createCliAction(
             connectionString,
           });
 
-          console.log(`ConfigMap '${configMapName}' updated successfully!`);
+          logger.info(`ConfigMap '${configMapName}' updated successfully!`);
 
           lastConnectionString = connectionString;
         }
       } catch (e) {
-        console.error(e.toString());
+        logger.error(e.toString());
       }
 
       await delay(updateIntervalMs);

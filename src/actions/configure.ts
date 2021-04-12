@@ -1,5 +1,6 @@
 import { createCliAction, ExitCode } from "../deps/cli-utils.ts";
 import { Type } from "../deps/typebox.ts";
+import { loggerWithContext } from "../logger.ts";
 
 import {
   fdbcliInheritExec,
@@ -7,6 +8,8 @@ import {
   fetchStatus,
   readClusterConfig,
 } from "../utils.ts";
+
+const logger = loggerWithContext("main");
 
 export default createCliAction(
   Type.Object({
@@ -42,7 +45,7 @@ export default createCliAction(
         .join(" ");
 
     if (currentCoordinators !== coordinators) {
-      console.log(
+      logger.info(
         `Coordinators changed from "${currentCoordinators}" to "${coordinators}", going to configure...`,
       );
       await fdbcliInheritExec(`coordinators ${coordinators}`);
@@ -64,7 +67,7 @@ export default createCliAction(
           createNew ? " new" : ""
         } ${redundancyMode} ${storageEngine} resolvers=${resolverCount} proxies=${proxyCount} logs=${logCount}`;
 
-        console.log(
+        logger.info(
           `Configuration changed, going to execute: ${cmd}`,
         );
 
@@ -73,17 +76,17 @@ export default createCliAction(
         const recoveryStateDescription =
           status.cluster.recovery_state?.description || "Unknown";
 
-        console.log("Failed configuring database!");
-        console.log(`Recovery state name: ${recoveryState}`);
-        console.log(`Recovery state description: ${recoveryStateDescription}`);
-        console.log(`Attempting to fetch status details...`);
+        logger.info("Failed configuring database!");
+        logger.info(`Recovery state name: ${recoveryState}`);
+        logger.info(`Recovery state description: ${recoveryStateDescription}`);
+        logger.info(`Attempting to fetch status details...`);
 
         await fdbcliInheritExec("status details");
 
         return ExitCode.One;
       }
     } else {
-      console.log("No configuration change, nothing to do");
+      logger.info("No configuration change, nothing to do");
     }
 
     return ExitCode.Zero;

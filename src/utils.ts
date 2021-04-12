@@ -5,6 +5,9 @@ import { TObject, TProperties, Type } from "./deps/typebox.ts";
 import { createK8sConfigMap } from "./deps/k8s-utils.ts";
 import { FdbDatabaseConfig, FdbStatus, FdbStatusSchema } from "./types.ts";
 import { FdbDatabaseConfigSchema } from "./types.ts";
+import { loggerWithContext } from "./logger.ts";
+
+const logger = loggerWithContext("utils");
 
 function trimFdbCliOutput(output: string): string {
   let newLineCount = 0;
@@ -89,7 +92,7 @@ export async function fetchStatus(
   const statusValidation = validate(FdbStatusSchema, parsed);
 
   if (!statusValidation.isSuccess) {
-    console.error(json);
+    logger.error(json);
     throw new Error(
       `FDB status JSON payload failed schema validation: ${
         JSON.stringify(statusValidation.errors, null, 2)
@@ -124,7 +127,7 @@ export async function readClusterConfig(
   );
 
   if (!configValidation.isSuccess) {
-    console.error(configValidation.errors);
+    logger.error(configValidation.errors);
     throw new Error("Invalid cluster config");
   }
 
@@ -170,7 +173,7 @@ export async function fetchCoordinatorEndpointsFromServiceNames(
     const specValidation = validate(ServiceSpecSchema, JSON.parse(output));
 
     if (!specValidation.isSuccess) {
-      console.error(output);
+      logger.error(output);
       throw new Error(
         `Invalid service spec for ${name}. Errors: ${
           JSON.stringify(specValidation.errors, null, 2)

@@ -6,6 +6,9 @@ import {
   readCurrentNamespace,
   updateConnectionStringConfigMap,
 } from "../utils.ts";
+import { loggerWithContext } from "../logger.ts";
+
+const logger = loggerWithContext("main");
 
 function generateString(length: number): string {
   return Array
@@ -62,14 +65,14 @@ export default createCliAction(
         return false;
       }
 
-      console.error(cmd.join(" "));
+      logger.error(cmd.join(" "));
       throw new Error(
         `Command exited with code '${code}' and stderr: ${stderr}`,
       );
     })();
 
     if (hasExistingConfigMap) {
-      console.log(`ConfigMap '${configMapName}' already exists, nothing to do`);
+      logger.info(`ConfigMap '${configMapName}' already exists, nothing to do`);
       return ExitCode.Zero;
     }
 
@@ -81,7 +84,7 @@ export default createCliAction(
       coordinatorEndpoints.join(",")
     }`;
 
-    console.log(
+    logger.info(
       `Going to create ConfigMap '${configMapName}' with data key '${configMapKey}' and value '${connectionString}'`,
     );
 
@@ -91,7 +94,7 @@ export default createCliAction(
       connectionString,
     });
 
-    console.log(`ConfigMap '${configMapName}' created successfully!`);
+    logger.info(`ConfigMap '${configMapName}' created successfully!`);
 
     return ExitCode.Zero;
   },
