@@ -26,7 +26,7 @@ jobs:
 
       - name: Build and push shell Docker image
         id: buildkit
-        uses: shopstic/buildkit-action@1.0.8
+        uses: shopstic/buildkit-action@1.0.10
         with:
           context: ${{ github.workspace }}/images/shell
           image: ghcr.io/shopstic/k8s-fdb-configurator-ci
@@ -100,7 +100,7 @@ jobs:
           fi
 
       - name: Build and push app Docker image to latest
-        uses: shopstic/buildkit-action@1.0.8
+        uses: shopstic/buildkit-action@1.0.10
         if: steps.ref_name.outputs.branch == 'main'
         with:
           context: ${{ github.workspace }}/images/app
@@ -110,7 +110,7 @@ jobs:
           skipIfExists: false
 
       - name: Build and push app Docker image to tag
-        uses: shopstic/buildkit-action@1.0.8
+        uses: shopstic/buildkit-action@1.0.10
         if: steps.ref_name.outputs.tag != ''
         with:
           context: ${{ github.workspace }}/images/app
