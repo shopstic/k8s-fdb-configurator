@@ -31,7 +31,7 @@ export default createCliAction(
       throw new Error(`${FDB_CLUSTER_FILE} env variable is not set`);
     }
 
-    let lastConnectionString = await Deno.readTextFile(clusterFile);
+    let lastConnectionString = (await Deno.readTextFile(clusterFile)).trim();
 
     logger.info(
       "Connection string sync loop started with last value",
@@ -60,6 +60,9 @@ export default createCliAction(
         if (connectionString === lastConnectionString) {
           logger.debug(`Connection string hasn't changed`, connectionString);
         } else {
+          logger.info(
+            `Connection string changed from '${lastConnectionString}' to ${connectionString}`,
+          );
           logger.info(
             `Going to update ConfigMap '${configMapName}' with data key '${configMapKey}' and value '${connectionString}'`,
           );
