@@ -17,9 +17,10 @@ COPY --from=bin-dumb-init /usr/bin/dumb-init /usr/bin/dumb-init
 COPY --from=bin-kubectl /usr/bin/kubectl /usr/bin/kubectl
 COPY --from=bin-deno /usr/bin/deno /usr/bin/deno
 
-COPY ./app.js /home/app/app.js
-
 USER app:app
 WORKDIR /home/app
 
-ENTRYPOINT ["/usr/bin/dumb-init", "--", "deno", "run", "--unstable", "-A", "/home/app/app.js"]
+COPY ./app.js /home/app/app.js
+COPY ./entrypoint.sh /home/app/entrypoint.sh
+
+ENTRYPOINT ["/home/app/entrypoint.sh"]
