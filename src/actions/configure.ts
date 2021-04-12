@@ -197,6 +197,18 @@ async function excludeAndIncludeProcesses(
     );
   }
 
+  if (toBeIncludedAddresses.length > 0) {
+    logger.info(
+      `The following ${toBeIncludedAddresses.length} addresses will be included back:\n${
+        toBeIncludedAddresses.map((a) =>
+          prettyPrintProcessInfo(processByAddressMap[a])
+        ).join("\n")
+      }`,
+    );
+
+    await fdbcliInheritExec(`include ${toBeIncludedAddresses.join(" ")}`);
+  }
+
   if (toBeExcludedAddresses.length === 0) {
     logger.info("No new address to be excluded");
   } else {
@@ -215,18 +227,6 @@ async function excludeAndIncludeProcesses(
         `exclude ${toBeExcludedAddresses.join(" ")}`,
       );
     }
-  }
-
-  if (toBeIncludedAddresses.length > 0) {
-    logger.info(
-      `The following ${toBeIncludedAddresses.length} addresses will be included back:\n${
-        toBeIncludedAddresses.map((a) =>
-          prettyPrintProcessInfo(processByAddressMap[a])
-        ).join("\n")
-      }`,
-    );
-
-    await fdbcliInheritExec(`include ${toBeIncludedAddresses.join(" ")}`);
   }
 
   return true;
