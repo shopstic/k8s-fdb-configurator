@@ -91,7 +91,9 @@ export default createCliAction(
         logger.info(
           `Making sure /etc/fstab does not already contain a reference to ${devicePath}`,
         );
-        const currentFstabContent = await Deno.readTextFile("/etc/fstab");
+        const currentFstabContent = await captureExec({
+          run: { cmd: toRootElevatedCommand(["cat", "/etc/fstab"]) },
+        });
 
         if (currentFstabContent.indexOf(devicePath) !== -1) {
           logger.error(
@@ -106,11 +108,11 @@ export default createCliAction(
         });
 
         logger.info(`Writing ${devicePath} to /etc/fstab`);
-        await Deno.writeTextFile(
-          "/etc/fstab",
-          currentFstabContent + "\n" +
+        await inheritExec({
+          run: { cmd: toRootElevatedCommand(["tee", "/etc/fstab"]) },
+          stdin: currentFstabContent + "\n" +
             `${devicePath}  ${mountPath}  ext4  defaults,noatime,discard,nofail  0 0`,
-        );
+        });
 
         logger.info(`Creating mount path ${mountPath}`);
         await inheritExec({
