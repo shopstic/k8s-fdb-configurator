@@ -145,7 +145,7 @@ export default createCliAction(
     );
     await kubectlInherit({
       args: [
-        "annotation",
+        "annotate",
         `node/${nodeName}`,
         `${pendingDeviceIdsAnnotationName}-`,
       ],
