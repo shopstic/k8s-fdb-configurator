@@ -11,13 +11,13 @@ const logger = loggerWithContext("main");
 export default createCliAction(
   Type.Object({
     nodeNameEnvVarName: NonEmptyString(),
-    pendingDeviceIdsAnnotationName: NonEmptyString(),
-    rootMountPath: Type.String(),
+    pendingDeviceIdsLabelName: NonEmptyString(),
+    rootMountPath: NonEmptyString(),
   }),
   async (
     {
       nodeNameEnvVarName,
-      pendingDeviceIdsAnnotationName,
+      pendingDeviceIdsLabelName,
       rootMountPath,
     },
   ) => {
@@ -27,23 +27,23 @@ export default createCliAction(
       throw new Error(`${nodeNameEnvVarName} env variable is not set`);
     }
 
-    const nodeAnnotations = await kubectlGetJson({
+    const nodeLabels = await kubectlGetJson({
       args: [
         `node/${nodeName}`,
-        "-o=jsonpath={.metadata.annotations}",
+        "-o=jsonpath={.metadata.labels}",
       ],
       schema: Type.Dict(Type.String()),
     });
 
     const deviceIdsString =
-      (typeof nodeAnnotations[pendingDeviceIdsAnnotationName] === "string")
-        ? nodeAnnotations[pendingDeviceIdsAnnotationName]
+      (typeof nodeLabels[pendingDeviceIdsLabelName] === "string")
+        ? nodeLabels[pendingDeviceIdsLabelName]
         : "";
     const deviceIds = deviceIdsString.split(",");
 
     if (deviceIds.length === 0) {
       logger.info(
-        `Node annotation '${pendingDeviceIdsAnnotationName}' is empty, nothing to do`,
+        `Node label '${pendingDeviceIdsLabelName}' is empty, nothing to do`,
       );
       return ExitCode.Zero;
     }
@@ -133,14 +133,14 @@ export default createCliAction(
     }
 
     logger.info(
-      `Removing '${pendingDeviceIdsAnnotationName}' annotation of node ${nodeName}`,
+      `Removing '${pendingDeviceIdsLabelName}' label from node ${nodeName}`,
     );
 
     await kubectlInherit({
       args: [
-        "annotate",
+        "label",
         `node/${nodeName}`,
-        `${pendingDeviceIdsAnnotationName}-`,
+        `${pendingDeviceIdsLabelName}-`,
       ],
     });
 
