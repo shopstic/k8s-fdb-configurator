@@ -15,7 +15,7 @@ export const FdbDatabaseConfigSchema = RelaxedObject({
   proxyCount: Type.Number({ minimum: 1 }),
   resolverCount: Type.Number({ minimum: 1 }),
   coordinatorServiceNames: Type.Array(Type.String()),
-  excludedServiceEndpoints: Type.Array(Type.Object({
+  excludedServiceEndpoints: Type.Array(RelaxedObject({
     name: Type.String(),
     port: Type.Number({ minimum: 1, maximum: 65535 }),
   })),
@@ -31,18 +31,18 @@ function RelaxedObject<T extends TProperties>(
 
 export const FdbStatusSchema = RelaxedObject({
   cluster: RelaxedObject({
-    configuration: Type.Optional(Type.Object({
+    configuration: Type.Optional(RelaxedObject({
       resolvers: Type.Number(),
       proxies: Type.Number(),
       logs: Type.Number(),
       redundancy_mode: FdbDatabaseConfigSchema.properties.redundancyMode,
       storage_engine: FdbDatabaseConfigSchema.properties.storageEngine,
     })),
-    recovery_state: Type.Optional(Type.Object({
+    recovery_state: Type.Optional(RelaxedObject({
       name: Type.String(),
       description: Type.String(),
     })),
-    processes: Type.Optional(Type.Dict(Type.Object({
+    processes: Type.Optional(Type.Dict(RelaxedObject({
       address: Type.String(),
       excluded: Type.Optional(Type.Boolean()),
       machine_id: Type.Optional(Type.String()),
@@ -64,7 +64,7 @@ export const FdbStatusSchema = RelaxedObject({
     }),
     coordinators: RelaxedObject({
       quorum_reachable: Type.Boolean(),
-      coordinators: Type.Array(Type.Object({
+      coordinators: Type.Array(RelaxedObject({
         address: Type.String(),
         reachable: Type.Boolean(),
       })),
