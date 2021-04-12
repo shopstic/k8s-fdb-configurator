@@ -33,9 +33,14 @@ export default createCliAction(
 
     let lastConnectionString = await Deno.readTextFile(clusterFile);
 
+    logger.info(
+      "Connection string sync loop started with last value",
+      lastConnectionString,
+    );
+
     while (true) {
       try {
-        logger.info("Getting current connection string");
+        logger.debug("Getting current connection string");
         const connectionStringResult = await fdbcliCaptureExec(
           `get \\xFF\\xFF/connection_string`,
         );
@@ -53,7 +58,7 @@ export default createCliAction(
         const connectionString = connectionStringMatch[1];
 
         if (connectionString === lastConnectionString) {
-          logger.info(`Connection string hasn't changed`, connectionString);
+          logger.debug(`Connection string hasn't changed`, connectionString);
         } else {
           logger.info(
             `Going to update ConfigMap '${configMapName}' with data key '${configMapKey}' and value '${connectionString}'`,
