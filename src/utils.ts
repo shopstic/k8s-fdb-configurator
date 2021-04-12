@@ -1,7 +1,7 @@
 import { captureExec, inheritExec } from "./deps/exec-utils.ts";
 import { validate } from "./deps/validation-utils.ts";
 import { memoizePromise } from "./deps/async-utils.ts";
-import { TObject, TProperties, Type } from "./deps/typebox.ts";
+import { Static, TObject, TProperties, Type } from "./deps/typebox.ts";
 import { createK8sConfigMap } from "./deps/k8s-utils.ts";
 import { FdbDatabaseConfig, FdbStatus, FdbStatusSchema } from "./types.ts";
 import { FdbDatabaseConfigSchema } from "./types.ts";
@@ -140,7 +140,7 @@ function RelaxedObject<T extends TProperties>(
   return Type.Object<T>(properties, { additionalProperties: true });
 }
 
-const ServiceSpecSchema = RelaxedObject({
+export const ServiceSpecSchema = RelaxedObject({
   clusterIP: Type.String({ format: "ipv4" }),
   ports: Type.Array(
     RelaxedObject({
@@ -150,9 +150,11 @@ const ServiceSpecSchema = RelaxedObject({
   ),
 });
 
-export async function fetchCoordinatorEndpointsFromServiceNames(
+export type ServiceSpec = Static<typeof ServiceSpecSchema>;
+
+export async function fetchServiceSpecs(
   serviceNames: string[],
-): Promise<string[]> {
+): Promise<ServiceSpec[]> {
   const namespace = await readCurrentNamespace();
   const promises = serviceNames.map(async (name) => {
     const output = await captureExec(
@@ -184,7 +186,13 @@ export async function fetchCoordinatorEndpointsFromServiceNames(
     return specValidation.value;
   });
 
-  const specs = await Promise.all(promises);
+  return await Promise.all(promises);
+}
+
+export async function fetchCoordinatorEndpointsFromServiceNames(
+  serviceNames: string[],
+): Promise<string[]> {
+  const specs = await fetchServiceSpecs(serviceNames);
 
   return specs.map((spec) => `${spec.clusterIP}:${spec.ports[0]!.port}`);
 }

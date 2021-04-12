@@ -29,6 +29,22 @@ function RelaxedObject<T extends TProperties>(
   return Type.Object<T>(properties, { additionalProperties: true });
 }
 
+export const FdbStatusProcessSchema = RelaxedObject({
+  address: Type.String(),
+  excluded: Type.Optional(Type.Boolean()),
+  machine_id: Type.Optional(Type.String()),
+  class_type: Type.Union([
+    Type.Literal("unset"),
+    Type.Literal("coordinator"),
+    Type.Literal("storage"),
+    Type.Literal("transaction"),
+    Type.Literal("stateless"),
+    Type.Literal("proxy"),
+    Type.Literal("log"),
+    Type.Literal("master"),
+  ]),
+});
+
 export const FdbStatusSchema = RelaxedObject({
   cluster: RelaxedObject({
     configuration: Type.Optional(RelaxedObject({
@@ -42,21 +58,7 @@ export const FdbStatusSchema = RelaxedObject({
       name: Type.String(),
       description: Type.String(),
     })),
-    processes: Type.Optional(Type.Dict(RelaxedObject({
-      address: Type.String(),
-      excluded: Type.Optional(Type.Boolean()),
-      machine_id: Type.Optional(Type.String()),
-      class_type: Type.Union([
-        Type.Literal("unset"),
-        Type.Literal("coordinator"),
-        Type.Literal("storage"),
-        Type.Literal("transaction"),
-        Type.Literal("stateless"),
-        Type.Literal("proxy"),
-        Type.Literal("log"),
-        Type.Literal("master"),
-      ]),
-    }))),
+    processes: Type.Optional(Type.Dict(FdbStatusProcessSchema)),
   }),
   client: RelaxedObject({
     database_status: RelaxedObject({
@@ -73,3 +75,4 @@ export const FdbStatusSchema = RelaxedObject({
 });
 
 export type FdbStatus = Static<typeof FdbStatusSchema>;
+export type FdbStatusProcess = Static<typeof FdbStatusProcessSchema>;
