@@ -111,28 +111,32 @@ async function excludeAndIncludeProcesses(
   status: FdbStatus,
   config: FdbDatabaseConfig,
 ): Promise<boolean> {
-  const { excludedServiceEndpoints } = config;
-
-  if (excludedServiceEndpoints.length === 0) {
-    return true;
-  }
-
-  logger.info(
-    `There are ${excludedServiceEndpoints.length} desired excluded service endpoints`,
-    JSON.stringify(excludedServiceEndpoints, null, 2),
-  );
-
   if (!status.client.coordinators.quorum_reachable) {
     logger.error("Quorum not reachable, going to skip");
     return false;
   }
 
-  const serviceSpecs = await fetchServiceSpecs(
-    excludedServiceEndpoints.map((e) => e.name),
-  );
-  const desiredExcludedAddresses = serviceSpecs.map((s, i) =>
-    `${s.clusterIP}:${excludedServiceEndpoints[i].port}`
-  );
+  const { excludedServiceEndpoints } = config;
+
+  const desiredExcludedAddresses = await (async () => {
+    if (excludedServiceEndpoints.length === 0) {
+      return [];
+    } else {
+      logger.info(
+        `There are ${excludedServiceEndpoints.length} desired excluded service endpoints`,
+        JSON.stringify(excludedServiceEndpoints, null, 2),
+      );
+
+      const serviceSpecs = await fetchServiceSpecs(
+        excludedServiceEndpoints.map((e) => e.name),
+      );
+
+      return serviceSpecs.map((s, i) =>
+        `${s.clusterIP}:${excludedServiceEndpoints[i].port}`
+      );
+    }
+  })();
+
   const desiredExcludedAddressSet = new Set(desiredExcludedAddresses);
 
   const processList = Object.values(
