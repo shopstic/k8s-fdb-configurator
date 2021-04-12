@@ -15,14 +15,16 @@ const logger = loggerWithContext("main");
 export default createCliAction(
   Type.Object({
     nodeNameEnvVarName: NonEmptyString(),
-    labelName: NonEmptyString(),
+    pendingLabelName: NonEmptyString(),
+    pendingLabelCompletedValue: NonEmptyString(),
     pendingDeviceIdsAnnotationName: NonEmptyString(),
     rootMountPath: NonEmptyString(),
   }),
   async (
     {
       nodeNameEnvVarName,
-      labelName,
+      pendingLabelName,
+      pendingLabelCompletedValue,
       pendingDeviceIdsAnnotationName,
       rootMountPath,
     },
@@ -152,13 +154,14 @@ export default createCliAction(
     });
 
     logger.info(
-      `Removing '${labelName}' label from node ${nodeName}`,
+      `Setting label '${pendingLabelName}=${pendingLabelCompletedValue}' for node ${nodeName}`,
     );
     await kubectlInherit({
       args: [
         "label",
+        "--overwrite",
         `node/${nodeName}`,
-        `${labelName}-`,
+        `${pendingLabelName}=${pendingLabelCompletedValue}`,
       ],
     });
 
