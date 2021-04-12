@@ -42,7 +42,9 @@ export default createCliAction(
       try {
         logger.debug("Getting current connection string");
         const connectionStringResult = await fdbcliCaptureExec(
-          `get \\xFF\\xFF/connection_string`,
+          // Must issue "status minimal" here such that connection
+          // string is updated timely
+          `status minimal; get \\xFF\\xFF/connection_string`,
         );
 
         const connectionStringMatch = connectionStringResult.match(
