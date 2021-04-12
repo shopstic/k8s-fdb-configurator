@@ -26,7 +26,7 @@ jobs:
 
       - name: Build and push shell Docker image
         id: buildkit
-        uses: shopstic/buildkit-action@1.0.6
+        uses: shopstic/buildkit-action@1.0.7
         with:
           context: ${{ github.workspace }}/images/shell
           image: ghcr.io/shopstic/k8s-fdb-configurator-ci
@@ -91,11 +91,16 @@ jobs:
       - name: Github ref name
         id: ref_name
         run: |
-          echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
-          echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
+          if [[ "${GITHUB_REF}" =~ ^refs/head/.* ]]; then
+            echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
+          fi
+
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/.* ]]; then
+            echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
+          fi
 
       - name: Build and push app Docker image to latest
-        uses: shopstic/buildkit-action@1.0.6
+        uses: shopstic/buildkit-action@1.0.7
         if: steps.ref_name.outputs.branch == 'main'
         with:
           context: ${{ github.workspace }}/images/app
@@ -105,7 +110,7 @@ jobs:
           skipIfExists: false
 
       - name: Build and push app Docker image to tag
-        uses: shopstic/buildkit-action@1.0.6
+        uses: shopstic/buildkit-action@1.0.7
         if: steps.ref_name.outputs.tag != ''
         with:
           context: ${{ github.workspace }}/images/app
