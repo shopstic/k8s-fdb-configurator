@@ -274,7 +274,7 @@ export async function fetchServiceSpecs(
   serviceNames: string[],
 ): Promise<ServiceSpec[]> {
   const namespace = await readCurrentNamespace();
-  const promises = serviceNames.map(async (name) => {
+  const promises = serviceNames.map((name) => {
     return kubectlGetJson({
       args: [
         `service/${name}`,
