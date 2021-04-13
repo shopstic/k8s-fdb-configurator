@@ -167,15 +167,15 @@ ${logMountSourcePath}  ${logBindMountTargetPath}  none  bind  0 0
           });
 
           logger.info(
-            `Creating bind-mount source paths: ${storageBindMountTargetPath} and ${logBindMountTargetPath}`,
+            `Creating bind-mount source paths: ${storageMountSourcePath} and ${logMountSourcePath}`,
           );
           await inheritExec({
             run: {
               cmd: toRootElevatedCommand([
                 "mkdir",
                 "-p",
-                storageBindMountTargetPath,
-                logBindMountTargetPath,
+                storageMountSourcePath,
+                logMountSourcePath,
               ]),
             },
           });
